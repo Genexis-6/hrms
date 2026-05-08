@@ -48,6 +48,7 @@ export const bulkCreateStaff = (staffList: unknown[]) => API.post('/staff/bulk',
 
 // ─── Attendance ────────────────────────────────
 export const checkIn = (staffId: string) => API.post('/attendance/checkin', { staffId });
+export const getActiveStaffNow = () => API.get('/attendance/active');
 export const checkOut = (staffId: string) => API.post('/attendance/checkout', { staffId });
 export const getTodayAttendance = () => API.get('/attendance/today');
 export const getStaffAttendanceHistory = (staffId: string, params?: Record<string, string>) =>

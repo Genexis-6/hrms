@@ -162,7 +162,7 @@ export const updateStaff = async (req: Request, res: Response): Promise<void> =>
     }
 
     const staff = await Staff.findByIdAndUpdate(id, req.body, {
-      new: true,
+      returnDocument: 'after',
       runValidators: true,
     }).select('-__v');
 
