@@ -4,7 +4,6 @@ const API = axios.create({
   baseURL: 'http://localhost:5000/api',
 });
 
-// Attach token to every request
 API.interceptors.request.use((config) => {
   const stored = localStorage.getItem('unidel-user');
   if (stored) {
@@ -16,7 +15,6 @@ API.interceptors.request.use((config) => {
   return config;
 });
 
-// Handle 401 globally
 API.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -48,9 +46,9 @@ export const bulkCreateStaff = (staffList: unknown[]) => API.post('/staff/bulk',
 
 // ─── Attendance ────────────────────────────────
 export const checkIn = (staffId: string) => API.post('/attendance/checkin', { staffId });
-export const getActiveStaffNow = () => API.get('/attendance/active');
 export const checkOut = (staffId: string) => API.post('/attendance/checkout', { staffId });
 export const getTodayAttendance = () => API.get('/attendance/today');
+export const getActiveStaffNow = () => API.get('/attendance/active');
 export const getStaffAttendanceHistory = (staffId: string, params?: Record<string, string>) =>
   API.get(`/attendance/history/${staffId}`, { params });
 
@@ -64,3 +62,21 @@ export const approveLeave = (id: string, comment?: string) =>
 export const getAllPromotions = () => API.get('/promotion');
 export const vetPromotion = (data: { staffId: string; proposedDesignation: string; proposedGradeLevel: string }) =>
   API.post('/promotion/vet', data);
+
+// ─── Audit ─────────────────────────────────────
+export const getAuditLogs = (params?: Record<string, string>) => API.get('/audit', { params });
+export const getRecentActivity = () => API.get('/audit/recent');
+
+// ─── Approvals ─────────────────────────────────
+export const getPendingApprovals = () => API.get('/approval/pending');
+export const approveStep = (chainId: string, comment?: string) =>
+  API.post(`/approval/${chainId}/approve`, { comment });
+export const rejectStep = (chainId: string, comment: string) =>
+  API.post(`/approval/${chainId}/reject`, { comment });
+
+// ─── Payroll ───────────────────────────────────
+export const getReconciliation = (payrollCount: number) =>
+  API.get('/payroll/reconciliation', { params: { payrollCount } });
+export const getVerifiedStaffCount = () => API.get('/payroll/staff-count');
+export const getSalaryStructure = () => API.get('/payroll/salary-structure');
+export const getGradeChanges = () => API.get('/payroll/grade-changes');

@@ -18,8 +18,8 @@ const StaffSchema = new Schema({
   },
   isActive: { type: Boolean, default: true },
   leaveDaysRemaining: { type: Number, default: 30 },
-  createdAt: { type: Date, default: Date.now },
+}, {
+  timestamps: true,
 });
-
 export type IStaff = InferSchemaType<typeof StaffSchema> & Document;
 export default mongoose.model<IStaff>('Staff', StaffSchema);

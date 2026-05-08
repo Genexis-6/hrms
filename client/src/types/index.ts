@@ -74,3 +74,81 @@ export interface IVettingResult {
   recommendation: string;
   missingRequirements: string[];
 }
+
+// Add these to your existing types file:
+
+export interface IAuditLog {
+  _id: string;
+  action: string;
+  entity: string;
+  documentId: string;
+  changedBy: { _id: string; name: string; email: string; role: string };
+  changes: { before?: Record<string, unknown>; after?: Record<string, unknown> };
+  description: string;
+  ipAddress?: string;
+  timestamp: string;
+  createdAt: string;
+}
+
+export interface IApprovalChain {
+  _id: string;
+  requestType: 'LEAVE' | 'PROMOTION' | 'SALARY_ADJUSTMENT';
+  requestId: string;
+  requestModel: string;
+  staffId: { _id: string; firstName: string; lastName: string; department: string; faculty: string };
+  steps: IApprovalStep[];
+  currentStep: number;
+  overallStatus: 'IN_PROGRESS' | 'APPROVED' | 'REJECTED';
+  initiatedBy: { _id: string; name: string; email: string };
+  initiatedAt: string;
+  completedAt?: string;
+}
+
+export interface IApprovalStep {
+  _id: string;
+  step: number;
+  role: string;
+  title: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SKIPPED';
+  approvedBy?: string;
+  approvedAt?: string;
+  comment?: string;
+}
+
+export interface IReconciliationReport {
+  generatedAt: string;
+  activeStaffCount: number;
+  payrollHeadcount: number;
+  discrepancy: number;
+  ghostWorkerCandidates: { staffId: string; name: string; department: string; lastActive: string }[];
+  missingFromPayroll: { staffId: string; name: string; department: string }[];
+  salaryGradeChanges: { staffId: string; name: string; oldGrade: string; newGrade: string; date: string }[];
+  summary: string;
+}
+
+export interface IPayrollStaff {
+  staffId: string;
+  name: string;
+  department: string;
+  cadre: string;
+  gradeLevel: string;
+  monthlySalary: number;
+  accountNumber: string;
+  bankName: string;
+}
+
+export interface IPayrollSummary {
+  generatedAt: string;
+  totalStaff: number;
+  totalMonthlyPayroll: number;
+  staff: IPayrollStaff[];
+}
+
+export interface IRecentActivity {
+  _id: string;
+  action: string;
+  entity: string;
+  description: string;
+  changedBy: { _id: string; name: string; email: string };
+  timestamp: string;
+}

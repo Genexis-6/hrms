@@ -7,6 +7,12 @@ import staffRoutes from './routes/staffRoutes.js';
 import attendanceRoutes from './routes/attendanceRoutes.js';
 import leaveRoutes from './routes/leaveRoutes.js';
 import promotionRoutes from './routes/promotionRoutes.js';
+import payrollRoutes from './routes/payrollRoutes.js';
+import approvalRoutes from './routes/approvalRoutes.js';
+import auditRoutes from './routes/auditRoutes.js';
+
+
+// Add after existing route declarations
 
 const app = express();
 
@@ -24,6 +30,12 @@ app.use('/api/staff', staffRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/leave', leaveRoutes);
 app.use('/api/promotion', promotionRoutes);
+
+
+
+app.use('/api/payroll', payrollRoutes);
+app.use('/api/approval', approvalRoutes);
+app.use('/api/audit', auditRoutes);
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

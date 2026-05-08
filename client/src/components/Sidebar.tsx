@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, Clock, FileText, TrendingUp, LogOut, GraduationCap, Menu, X } from 'lucide-react';
+import { LayoutDashboard, Users, Clock, FileText, TrendingUp, LogOut, GraduationCap, Menu, X, ScrollText, DollarSign, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 const navItems = [
@@ -9,8 +9,10 @@ const navItems = [
   { to: '/attendance', icon: Clock, label: 'Attendance' },
   { to: '/leave', icon: FileText, label: 'Leave' },
   { to: '/promotion', icon: TrendingUp, label: 'Promotion' },
+  { to: '/approvals', icon: ScrollText, label: 'Approvals' },
+  { to: '/payroll', icon: DollarSign, label: 'Payroll' },
+  { to: '/audit', icon: ShieldCheck, label: 'Audit Trail' },
 ];
-
 export default function Sidebar() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();

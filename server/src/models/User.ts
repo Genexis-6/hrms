@@ -6,14 +6,17 @@ const UserSchema = new Schema(
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    role: { type: String, enum: ['admin', 'hr', 'viewer'], default: 'hr' },
+    role: {
+      type: String,
+      enum: ['admin', 'hr', 'viewer', 'hod', 'dean', 'registrar', 'bursar', 'vc'],
+      default: 'hr',
+    },
   },
   {
     timestamps: true,
   }
 );
 
-// Hash password before saving — Mongoose 9: no 'next' callback, just async
 UserSchema.pre('save', async function () {
   if (this.isModified('password')) {
     const salt = await bcrypt.genSalt(10);
@@ -21,7 +24,6 @@ UserSchema.pre('save', async function () {
   }
 });
 
-// Instance method for password comparison
 UserSchema.method('matchPassword', async function (enteredPassword: string): Promise<boolean> {
   return bcrypt.compare(enteredPassword, this.password as string);
 });

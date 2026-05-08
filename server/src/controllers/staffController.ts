@@ -5,8 +5,11 @@ import Attendance from '../models/Attendance.js';
 import Leave from '../models/Leave.js';
 import Promotion from '../models/Promotion.js';
 import { detectGhostWorkers } from '../services/aiVettingEngine.js';
+import AuditLog from '../models/AuditLog.js';
 
 const { ObjectId } = mongoose.Types;
+
+
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -14,6 +17,10 @@ const { ObjectId } = mongoose.Types;
  * Extracts and validates a single ObjectId string from req.params.
  * Returns null if the param is missing, is an array, or is not a valid ObjectId.
  */
+
+
+
+
 const extractParamId = (param: string | string[] | undefined): string | null => {
   if (!param || Array.isArray(param)) return null;
   if (!ObjectId.isValid(param)) return null;
@@ -21,7 +28,6 @@ const extractParamId = (param: string | string[] | undefined): string | null => 
 };
 
 // ─── Dashboard Stats ───────────────────────────────────────────
-
 export const getDashboardStats = async (_req: Request, res: Response): Promise<void> => {
   try {
     const todayStart = new Date();
@@ -29,23 +35,30 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const [totalStaff, presentToday, pendingLeave, pendingPromotions] = await Promise.all([
+    const [totalStaff, presentToday, pendingLeave, pendingPromotions, recentActivity] = await Promise.all([
       Staff.countDocuments({ isActive: true }),
       Attendance.countDocuments({
         checkIn: { $gte: todayStart, $lte: todayEnd },
       }),
       Leave.countDocuments({ status: 'Pending' }),
       Promotion.countDocuments({ status: 'Pending' }),
+      AuditLog.find()
+        .populate('changedBy', 'name email role')
+        .sort('-timestamp')
+        .limit(10),
     ]);
 
     const ghostCheck = detectGhostWorkers(totalStaff, totalStaff);
+    const ghostWorkerAlert = ghostCheck.discrepancy ? ghostCheck.message : '';
 
+    // Single response with all data
     res.json({
       totalStaff,
       presentToday,
       pendingLeave,
       pendingPromotions,
-      ghostWorkerAlert: ghostCheck.discrepancy ? ghostCheck.message : '',
+      ghostWorkerAlert,
+      recentActivity,
     });
   } catch (error) {
     res.status(500).json({
@@ -54,7 +67,6 @@ export const getDashboardStats = async (_req: Request, res: Response): Promise<v
     });
   }
 };
-
 // ─── Staff CRUD ─────────────────────────────────────────────────
 
 export const getAllStaff = async (_req: Request, res: Response): Promise<void> => {

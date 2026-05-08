@@ -7,6 +7,10 @@ import StaffManagement from './pages/StaffManagement';
 import Attendance from './pages/Attendance';
 import LeaveManagement from './pages/LeaveManagement';
 import PromotionVetting from './pages/PromotionVetting';
+// import AuditTrail from './pages/AuditTrail';
+import Approvals from './pages/Approvals';
+import Payroll from './pages/Payroll';
+import AuditTrail from './pages/AuditTrail';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();
@@ -41,6 +45,9 @@ export default function App() {
                   <Route path="/attendance" element={<Attendance />} />
                   <Route path="/leave" element={<LeaveManagement />} />
                   <Route path="/promotion" element={<PromotionVetting />} />
+                  <Route path="/audit" element={<AuditTrail />} />
+                  <Route path="/approvals" element={<Approvals />} />
+                  <Route path="/payroll" element={<Payroll />} />
                 </Routes>
               </AppLayout>
             </ProtectedRoute>
