@@ -4,6 +4,14 @@ import Attendance from '../models/Attendance.js';
 
 const { ObjectId } = mongoose.Types;
 
+// Helper: Get start and end of today in local time (Nigeria WAT)
+function getTodayRange() {
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  return { todayStart, todayEnd };
+}
+
 export const checkIn = async (req: Request, res: Response): Promise<void> => {
   try {
     const rawStaffId = req.body.staffId as string;
@@ -13,11 +21,7 @@ export const checkIn = async (req: Request, res: Response): Promise<void> => {
     }
 
     const staffId = new ObjectId(rawStaffId);
-
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    const { todayStart, todayEnd } = getTodayRange();
 
     const existing = await Attendance.findOne({
       staffId,
@@ -29,10 +33,11 @@ export const checkIn = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    const now = new Date();
     const attendance = await Attendance.create({
       staffId,
-      checkIn: new Date(),
-      status: new Date().getHours() >= 9 ? 'Late' : 'Present',
+      checkIn: now,
+      status: now.getHours() >= 9 ? 'Late' : 'Present',
     });
 
     res.status(201).json(attendance);
@@ -53,69 +58,56 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
     }
 
     const staffId = new ObjectId(rawStaffId);
+    const { todayStart, todayEnd } = getTodayRange();
 
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
-
-    console.log('Looking for attendance record:', {
-      staffId: staffId.toString(),
-      todayStart: todayStart.toISOString(),
-      todayEnd: todayEnd.toISOString(),
-    });
-
-    // First, find the record to debug
-    const existingRecord = await Attendance.findOne({
+    // Check if already checked out — use $eq: null which matches both null and undefined
+    const alreadyCheckedOut = await Attendance.findOne({
       staffId,
       checkIn: { $gte: todayStart, $lte: todayEnd },
-      checkOut: { $exists: false },
+      checkOut: { $ne: null },
     });
 
-    console.log('Found record:', existingRecord ? existingRecord._id : 'NONE');
-
-    if (!existingRecord) {
-      // Check if they already checked out
-      const alreadyCheckedOut = await Attendance.findOne({
-        staffId,
-        checkIn: { $gte: todayStart, $lte: todayEnd },
-        checkOut: { $exists: true },
-      });
-
-      if (alreadyCheckedOut) {
-        res.status(400).json({ message: 'Already checked out today' });
-        return;
-      }
-
-      // Check if they even checked in
-      const anyRecordToday = await Attendance.findOne({
-        staffId,
-        checkIn: { $gte: todayStart, $lte: todayEnd },
-      });
-
-      if (!anyRecordToday) {
-        res.status(404).json({ message: 'No check-in record found for today. Please check in first.' });
-        return;
-      }
+    if (alreadyCheckedOut) {
+      res.status(400).json({ message: 'Already checked out today' });
+      return;
     }
 
-    // Now update
-    const attendance = await Attendance.findOneAndUpdate(
-      {
+    // Find active check-in where checkOut is null or doesn't exist
+    // Use $eq: null to catch both null and missing field
+    const activeRecord = await Attendance.findOne({
+      staffId,
+      checkIn: { $gte: todayStart, $lte: todayEnd },
+      checkOut: null,
+    });
+
+    console.log('Active record found:', activeRecord ? String(activeRecord._id) : 'NONE');
+
+    if (!activeRecord) {
+      const anyToday = await Attendance.findOne({
         staffId,
         checkIn: { $gte: todayStart, $lte: todayEnd },
-        checkOut: { $exists: false },
-      },
+      });
+
+      if (!anyToday) {
+        res.status(404).json({ message: 'No check-in record found for today. Please check in first.' });
+      } else {
+        res.status(400).json({ message: 'Already checked out today' });
+      }
+      return;
+    }
+
+    const attendance = await Attendance.findByIdAndUpdate(
+      activeRecord._id,
       { checkOut: new Date() },
       { returnDocument: 'after' }
     ).populate('staffId', 'firstName lastName staffId department');
 
     if (!attendance) {
-      res.status(404).json({ message: 'Could not update record. No active check-in found.' });
+      res.status(500).json({ message: 'Failed to update record' });
       return;
     }
 
-    console.log('Checkout successful:', attendance._id);
+    console.log('Checkout successful:', String(attendance._id));
     res.json(attendance);
   } catch (error) {
     console.error('Check-out error:', error);
@@ -125,10 +117,7 @@ export const checkOut = async (req: Request, res: Response): Promise<void> => {
 
 export const getTodayAttendance = async (_req: Request, res: Response): Promise<void> => {
   try {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    const { todayStart, todayEnd } = getTodayRange();
 
     const records = await Attendance.find({
       checkIn: { $gte: todayStart, $lte: todayEnd },
@@ -144,14 +133,11 @@ export const getTodayAttendance = async (_req: Request, res: Response): Promise<
 
 export const getActiveStaff = async (_req: Request, res: Response): Promise<void> => {
   try {
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const todayEnd = new Date();
-    todayEnd.setHours(23, 59, 59, 999);
+    const { todayStart, todayEnd } = getTodayRange();
 
     const active = await Attendance.find({
       checkIn: { $gte: todayStart, $lte: todayEnd },
-      checkOut: { $exists: false },
+      checkOut: null,
     }).populate('staffId', 'firstName lastName staffId department email');
 
     res.json(active);

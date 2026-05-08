@@ -14,10 +14,7 @@ const AttendanceSchema = new Schema({
   timestamps: true,
 });
 
-// Compound index for faster queries by staff and date
 AttendanceSchema.index({ staffId: 1, checkIn: -1 });
-
-// Index for querying today's attendance efficiently
 AttendanceSchema.index({ checkIn: -1 });
 
 export type IAttendance = InferSchemaType<typeof AttendanceSchema> & {
